@@ -12,12 +12,14 @@ type GoOnAdding = {Adder: int; ToGo: int}
 
 type Msg = 
     | Increment 
+    | IncrementMofN of int * int 
     | Decrement
     | IncrementDelayed
     | IncrementTimes of int
     | ShowMsg of string
     | ShowMsgButGoOn of GoOnMsg
     | AddAndGoOn of GoOnAdding
+    | StartSeqMsgs
 
 let rnd = Random()
 
@@ -39,10 +41,26 @@ let justSleep secs = async {
     do! Async.Sleep (secs/2 )
 }
 
+let asyncSeqEvery milliseconds (messages: Msg list) : Cmd<Msg> = 
+  [ fun (dispatch: Msg -> unit) -> 
+        async {
+           for msg in messages do 
+               do! Async.Sleep milliseconds 
+               dispatch msg
+        } |> Async.StartImmediate ] 
+// then you can use it like this: 
+// StartSeqMsgs -> state, asyncSeqEvery 1000 [Increment; Increment; Increment]
+
+
+
 let update msg state =  
     match msg with 
     | Increment -> 
         let nextState = { state with Count = state.Count + 1; State="Incremented by 1" }
+        nextState, Cmd.none 
+        
+    | IncrementMofN (m, n) -> 
+        let nextState = { state with Count = state.Count + 1; State= sprintf "Incremented by %d of %d" m n }
         nextState, Cmd.none 
 
     | Decrement -> 
@@ -68,6 +86,8 @@ let update msg state =
     | AddAndGoOn msg ->
         {state with Count = state.Count + msg.Adder; State= sprintf "%d iterations to go" msg.ToGo }, Cmd.ofMsg (IncrementTimes msg.ToGo)
 
+    | StartSeqMsgs -> state, asyncSeqEvery 1000 ([1..3] |> List.map (fun i -> IncrementMofN (i, 3)))
+
 let bindings model dispatch = [
     "Count"     |> Binding.oneWay (fun state -> state.Count)
     "State"     |> Binding.oneWay (fun state -> state.State)
@@ -75,6 +95,7 @@ let bindings model dispatch = [
     "Decrement" |> Binding.cmd (fun state -> Decrement)
     "IncrementDelayed" |> Binding.cmd (fun state -> IncrementDelayed)
     "IncrementX10" |> Binding.cmd (fun state -> IncrementTimes 10)
+    "AsyncSeq" |> Binding.cmd (fun state -> StartSeqMsgs)
 ]
 
 type MainWindow = XAML<"MainWindow.xaml"> 
