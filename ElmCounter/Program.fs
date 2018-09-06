@@ -65,15 +65,18 @@ let mainWindow = MainWindow()
 let update msg state =  
     match msg with 
     | Increment -> 
-        let nextState = { state with Count = state.Count + 1; State="Incremented by 1" }
+        let newCount = state.Count + 1
+        let nextState = { state with Count = newCount; State="Incremented by 1"; HelloMsg = helloMsg state.MyName newCount }
         nextState, Cmd.none 
         
     | IncrementMofN (m, n) -> 
-        let nextState = { state with Count = state.Count + 1; State= sprintf "Incremented by %d of %d" m n }
+        let newCount = state.Count + 1
+        let nextState = { state with Count = newCount; State= sprintf "Incremented by %d of %d" m n; HelloMsg = helloMsg state.MyName newCount }
         nextState, Cmd.none 
 
     | Decrement -> 
-        let nextState = { state with Count = state.Count - 1; State="Decremented by 1" }
+        let newCount = state.Count - 1
+        let nextState = { state with Count = newCount; State="Decremented by 1"; HelloMsg = helloMsg state.MyName newCount}
         nextState, Cmd.none 
 
     | IncrementDelayed -> 
@@ -93,7 +96,8 @@ let update msg state =
         {state with State= sprintf "%s (%d to go)" msg.Msg msg.ToGo}, Cmd.ofMsg (IncrementTimes msg.ToGo)
     
     | AddAndGoOn msg ->
-        {state with Count = state.Count + msg.Adder; State= sprintf "%d iterations to go" msg.ToGo }, Cmd.ofMsg (IncrementTimes msg.ToGo)
+        let newCount = state.Count + msg.Adder
+        {state with Count = newCount; State= sprintf "%d iterations to go" msg.ToGo; HelloMsg = helloMsg state.MyName newCount }, Cmd.ofMsg (IncrementTimes msg.ToGo)
 
     | StartSeqMsgs -> state, asyncSeqEvery 1000 ([1..3] |> List.map (fun i -> IncrementMofN (i, 3)))
 
