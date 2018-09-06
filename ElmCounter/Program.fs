@@ -4,8 +4,9 @@ open Elmish
 open Elmish.WPF
 open System
 open FsXaml
+open System.Windows.Threading
 
-type State = { Count: int; State: string } 
+type State = { Count: int; State: string; MyName: string } 
 
 type GoOnMsg = {Msg: string; ToGo: int}
 type GoOnAdding = {Adder: int; ToGo: int}
@@ -20,10 +21,13 @@ type Msg =
     | ShowMsgButGoOn of GoOnMsg
     | AddAndGoOn of GoOnAdding
     | StartSeqMsgs
+    | SayHello
+    | NameIs of string
+    | ShowName
 
 let rnd = Random()
 
-let init() = { Count = 0; State="Ready" }, Cmd.none
+let init() = { Count = 0; State="Ready"; MyName= "Mister X" }, Cmd.none
 
 let simulateException level = 
     if rnd.Next(level) = level-1 
@@ -51,7 +55,10 @@ let asyncSeqEvery milliseconds (messages: Msg list) : Cmd<Msg> =
 // then you can use it like this: 
 // StartSeqMsgs -> state, asyncSeqEvery 1000 [Increment; Increment; Increment]
 
+type HelloWindow = XAML<"SecondWindow.xaml">
+type MainWindow = XAML<"MainWindow.xaml"> 
 
+let mainWindow = MainWindow()
 
 let update msg state =  
     match msg with 
@@ -88,19 +95,33 @@ let update msg state =
 
     | StartSeqMsgs -> state, asyncSeqEvery 1000 ([1..3] |> List.map (fun i -> IncrementMofN (i, 3)))
 
+    | SayHello ->    
+        mainWindow.Dispatcher.Invoke(fun () -> 
+            let helloWin = HelloWindow()
+            helloWin.DataContext <- mainWindow.DataContext
+            helloWin.ShowDialog()) |> ignore
+        state, Cmd.none
+    
+    | NameIs myName -> { state with MyName = myName }, Cmd.ofMsg  ShowName
+    | ShowName -> {state with State= sprintf "Hello %s" state.MyName }, Cmd.none 
+
 let bindings model dispatch = [
-    "Count"     |> Binding.oneWay (fun state -> state.Count)
-    "State"     |> Binding.oneWay (fun state -> state.State)
-    "Increment" |> Binding.cmd (fun state -> Increment)
-    "Decrement" |> Binding.cmd (fun state -> Decrement)
+    
+    "Count"            |> Binding.oneWay (fun state -> state.Count)
+    "State"            |> Binding.oneWay (fun state -> state.State)
+    "Increment"        |> Binding.cmd (fun state -> Increment)
+    "Decrement"        |> Binding.cmd (fun state -> Decrement)
     "IncrementDelayed" |> Binding.cmd (fun state -> IncrementDelayed)
-    "IncrementX10" |> Binding.cmd (fun state -> IncrementTimes 10)
-    "AsyncSeq" |> Binding.cmd (fun state -> StartSeqMsgs)
+    "IncrementX10"     |> Binding.cmd (fun state -> IncrementTimes 10)
+    "AsyncSeq"         |> Binding.cmd (fun state -> StartSeqMsgs)
+    "NameMsg"          |> Binding.oneWay (fun state -> sprintf "Hello! Your counter is %d!" state.Count)
+    "MyName"             |>  Binding.twoWay (fun state -> state.MyName) (fun name state -> NameIs name)
+    "SayHello"         |> Binding.cmd (fun _ -> SayHello)
 ]
 
-type MainWindow = XAML<"MainWindow.xaml"> 
+
 
 [<EntryPoint; STAThread>]
 let main argv = 
     Program.mkProgram init update bindings
-    |> Program.runWindow (MainWindow())
+    |> Program.runWindow (mainWindow)

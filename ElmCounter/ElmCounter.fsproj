@@ -50,6 +50,7 @@
     <None Include="App.config" />
     <Content Include="packages.config" />
     <Resource Include="MainWindow.xaml" />
+    <Resource Include="SecondWindow.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Elmish">
