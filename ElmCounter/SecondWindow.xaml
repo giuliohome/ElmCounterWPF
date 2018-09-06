@@ -7,7 +7,7 @@
         <StackPanel>
             <DockPanel>
                 <TextBlock Text="Your Name: " />
-                <TextBox Text="{Binding MyName}" />
+                <TextBox Text="{Binding MyName, UpdateSourceTrigger=PropertyChanged}" />
             </DockPanel>
             <TextBlock Text="{Binding NameMsg}" />
         </StackPanel>

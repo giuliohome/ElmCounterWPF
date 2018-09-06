@@ -6,7 +6,7 @@ open System
 open FsXaml
 open System.Windows.Threading
 
-type State = { Count: int; State: string; MyName: string } 
+type State = { Count: int; State: string; MyName: string; HelloMsg: string } 
 
 type GoOnMsg = {Msg: string; ToGo: int}
 type GoOnAdding = {Adder: int; ToGo: int}
@@ -27,7 +27,9 @@ type Msg =
 
 let rnd = Random()
 
-let init() = { Count = 0; State="Ready"; MyName= "Mister X" }, Cmd.none
+let helloMsg name count = sprintf "Hello %s! Your counter is %d!" name count //state.MyName state.Count
+let initName = "Mister X"
+let init() = { Count = 0; State="Ready"; MyName= initName; HelloMsg = helloMsg initName 0 }, Cmd.none
 
 let simulateException level = 
     if rnd.Next(level) = level-1 
@@ -99,10 +101,10 @@ let update msg state =
         mainWindow.Dispatcher.Invoke(fun () -> 
             let helloWin = HelloWindow()
             helloWin.DataContext <- mainWindow.DataContext
-            helloWin.ShowDialog()) |> ignore
+            helloWin.Show()) |> ignore
         state, Cmd.none
     
-    | NameIs myName -> { state with MyName = myName }, Cmd.ofMsg  ShowName
+    | NameIs myName -> { state with MyName = myName; HelloMsg = helloMsg myName state.Count }, Cmd.ofMsg  ShowName
     | ShowName -> {state with State= sprintf "Hello %s" state.MyName }, Cmd.none 
 
 let bindings model dispatch = [
@@ -114,8 +116,8 @@ let bindings model dispatch = [
     "IncrementDelayed" |> Binding.cmd (fun state -> IncrementDelayed)
     "IncrementX10"     |> Binding.cmd (fun state -> IncrementTimes 10)
     "AsyncSeq"         |> Binding.cmd (fun state -> StartSeqMsgs)
-    "NameMsg"          |> Binding.oneWay (fun state -> sprintf "Hello! Your counter is %d!" state.Count)
-    "MyName"             |>  Binding.twoWay (fun state -> state.MyName) (fun name state -> NameIs name)
+    "NameMsg"          |> Binding.oneWay (fun state -> state.HelloMsg)
+    "MyName"           |>  Binding.twoWay (fun state -> state.MyName) (fun name _ -> NameIs name)
     "SayHello"         |> Binding.cmd (fun _ -> SayHello)
 ]
 
