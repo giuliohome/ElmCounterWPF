@@ -62,6 +62,12 @@ type MainWindow = XAML<"MainWindow.xaml">
 
 let mainWindow = MainWindow()
 
+let showWin () =         
+            mainWindow.Dispatcher.Invoke(fun () -> 
+            let helloWin = HelloWindow()
+            helloWin.DataContext <- mainWindow.DataContext
+            helloWin.Show()) |> ignore
+
 let update msg state =  
     match msg with 
     | Increment -> 
@@ -102,11 +108,7 @@ let update msg state =
     | StartSeqMsgs -> state, asyncSeqEvery 1000 ([1..3] |> List.map (fun i -> IncrementMofN (i, 3)))
 
     | SayHello ->    
-        mainWindow.Dispatcher.Invoke(fun () -> 
-            let helloWin = HelloWindow()
-            helloWin.DataContext <- mainWindow.DataContext
-            helloWin.Show()) |> ignore
-        state, Cmd.none
+        state, Cmd.attemptFunc showWin () raise  
     
     | NameIs myName -> { state with MyName = myName; HelloMsg = helloMsg myName state.Count }, Cmd.ofMsg  ShowName
     | ShowName -> {state with State= sprintf "Hello %s" state.MyName }, Cmd.none 
