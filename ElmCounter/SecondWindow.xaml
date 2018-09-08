@@ -10,6 +10,7 @@
                 <TextBox Text="{Binding MyName, UpdateSourceTrigger=PropertyChanged}" />
             </DockPanel>
             <TextBlock Text="{Binding NameMsg}" />
+            <Button Content="Close Window" Command="{Binding CloseMe}" />
         </StackPanel>
     </Grid>
 </Window>

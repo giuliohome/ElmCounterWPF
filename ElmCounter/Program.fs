@@ -5,8 +5,11 @@ open Elmish.WPF
 open System
 open FsXaml
 open System.Windows.Threading
+open System.ComponentModel
+open FsXaml
+open System
 
-type State = { Count: int; State: string; MyName: string; HelloMsg: string } 
+type State = { Count: int; State: string; MyName: string; HelloMsg: string; Close: (unit -> unit) list; CloseEvt: IEvent<CancelEventHandler,CancelEventArgs> list } 
 
 type GoOnMsg = {Msg: string; ToGo: int}
 type GoOnAdding = {Adder: int; ToGo: int}
@@ -22,14 +25,17 @@ type Msg =
     | AddAndGoOn of GoOnAdding
     | StartSeqMsgs
     | SayHello
+    | SetClose of (unit -> unit) * IEvent<CancelEventHandler,CancelEventArgs>
     | NameIs of string
     | ShowName
+    | CloseMe
+    | SubClose of (CancelEventArgs -> unit) 
 
 let rnd = Random()
 
 let helloMsg name count = sprintf "Hello %s! Your counter is %d!" name count //state.MyName state.Count
 let initName = "Mister X"
-let init() = { Count = 0; State="Ready"; MyName= initName; HelloMsg = helloMsg initName 0 }, Cmd.none
+let init() = { Count = 0; State="Ready"; MyName= initName; HelloMsg = helloMsg initName 0; Close = [fun ()->()]; CloseEvt=[]}, Cmd.none
 
 let simulateException level = 
     if rnd.Next(level) = level-1 
@@ -54,20 +60,36 @@ let asyncSeqEvery milliseconds (messages: Msg list) : Cmd<Msg> =
                do! Async.Sleep milliseconds 
                dispatch msg
         } |> Async.StartImmediate ] 
-// then you can use it like this: 
-// StartSeqMsgs -> state, asyncSeqEvery 1000 [Increment; Increment; Increment]
 
 type HelloWindow = XAML<"SecondWindow.xaml">
 type MainWindow = XAML<"MainWindow.xaml"> 
 
 let mainWindow = MainWindow()
 
+let createTimer timerInterval eventHandler =
+    let timer = new System.Timers.Timer(float timerInterval)
+    timer.AutoReset <- true
+    timer.Elapsed.Add eventHandler
+    timer.Start()
+
+let closeEvtTimer (state:State) (dispatch: Msg -> unit)  =
+    createTimer 1000 <| fun _ ->
+        dispatch <| Msg.SubClose (fun _ -> dispatch Msg.CloseMe)
+    
+let closeWin (state:State) = 
+    state.Close 
+    |> List.iter (fun close -> close())
 let showWin () =     
-            simulateException 4
+            //simulateException 4
+            let mutable closeDelegate: unit -> unit = fun () -> ()
+            let mutable win : HelloWindow = null
             mainWindow.Dispatcher.Invoke(fun () -> 
             let helloWin = HelloWindow()
+            closeDelegate <- fun () -> helloWin.Close()
+            win <- helloWin
             helloWin.DataContext <- mainWindow.DataContext
-            helloWin.Show()) |> ignore
+            helloWin.Show()) //|> ignore
+            ((fun () -> mainWindow.Dispatcher.Invoke(closeDelegate)), win.Closing )
 
 let update msg state =  
     match msg with 
@@ -109,8 +131,15 @@ let update msg state =
     | StartSeqMsgs -> state, asyncSeqEvery 1000 ([1..3] |> List.map (fun i -> IncrementMofN (i, 3)))
 
     | SayHello ->    
-        state, Cmd.attemptFunc showWin () (fun ex -> ShowMsg ex.Message)  
+        state, Cmd.ofFunc  showWin () (fun (closing, closeEvt1) -> SetClose (closing, closeEvt1)) (fun ex -> ShowMsg ex.Message)  
     
+    | SetClose (closing, closeEvt1) -> {state with Close = [closing] |> List.append state.Close; CloseEvt = [closeEvt1] |> List.append state.CloseEvt }, Cmd.none
+    | CloseMe -> state, Cmd.attemptFunc (fun _ -> state.Close |> List.iter(fun c -> c()) ) () (fun ex -> ShowMsg ex.Message)
+    | SubClose f -> 
+        let ff = (fun state -> for ce in state.CloseEvt do (ce |> Event.add (fun x -> f x))  )
+        let fe = fun (ex: Exception) -> ShowMsg ex.Message
+        {state with CloseEvt = [] }, Cmd.attemptFunc ff state fe
+
     | NameIs myName -> { state with MyName = myName; HelloMsg = helloMsg myName state.Count }, Cmd.ofMsg  ShowName
     | ShowName -> {state with State= sprintf "Hello %s" state.MyName }, Cmd.none 
 
@@ -126,6 +155,7 @@ let bindings model dispatch = [
     "NameMsg"          |> Binding.oneWay (fun state -> state.HelloMsg)
     "MyName"           |>  Binding.twoWay (fun state -> state.MyName) (fun name _ -> NameIs name)
     "SayHello"         |> Binding.cmd (fun _ -> SayHello)
+    "CloseMe"          |> Binding.cmd (fun _ -> CloseMe)
 ]
 
 
@@ -133,4 +163,5 @@ let bindings model dispatch = [
 [<EntryPoint; STAThread>]
 let main argv = 
     Program.mkProgram init update bindings
+    |> Program.withSubscription (fun m -> Cmd.ofSub <| closeEvtTimer m)
     |> Program.runWindow (mainWindow)
