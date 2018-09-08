@@ -62,7 +62,8 @@ type MainWindow = XAML<"MainWindow.xaml">
 
 let mainWindow = MainWindow()
 
-let showWin () =         
+let showWin () =     
+            simulateException 4
             mainWindow.Dispatcher.Invoke(fun () -> 
             let helloWin = HelloWindow()
             helloWin.DataContext <- mainWindow.DataContext
@@ -108,7 +109,7 @@ let update msg state =
     | StartSeqMsgs -> state, asyncSeqEvery 1000 ([1..3] |> List.map (fun i -> IncrementMofN (i, 3)))
 
     | SayHello ->    
-        state, Cmd.attemptFunc showWin () raise  
+        state, Cmd.attemptFunc showWin () (fun ex -> ShowMsg ex.Message)  
     
     | NameIs myName -> { state with MyName = myName; HelloMsg = helloMsg myName state.Count }, Cmd.ofMsg  ShowName
     | ShowName -> {state with State= sprintf "Hello %s" state.MyName }, Cmd.none 
