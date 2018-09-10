@@ -30,12 +30,11 @@ type Msg =
     | NameIs of string
     | ShowName
     | NewBurrito
-    | SubscribeClose of List<Action>
     | SubmitBurrito of Object
 
 let rnd = Random()
 
-let helloMsg name count = sprintf "Hello %s! Your counter is %d!" name count //state.MyName state.Count
+let helloMsg name count = sprintf "Hello %s! Your counter is %d!" name count 
 let initName = "Mister X"
 let mutable countBurrito = 0
 let init() = 
@@ -137,10 +136,7 @@ let update msg state =
     
     | NewBurrito ->    
         state, Cmd.attemptFunc  burritoWin () (fun ex -> ShowMsg ex.Message)  
-    | SubscribeClose list -> 
-        state.CloseEvtMap.Add(countBurrito, list)
-        countBurrito <- countBurrito + 1
-        state, Cmd.none
+
     | SubmitBurrito obj -> 
         let list = obj :?> List<Action>
         state, Cmd.attemptFunc submitBurrito list (fun ex -> ShowMsg ex.Message)
@@ -158,12 +154,11 @@ let bindings model dispatch = [
     "MyName"           |>  Binding.twoWay (fun state -> state.MyName) (fun name _ -> NameIs name)
     "SayHello"         |> Binding.cmd (fun _ -> SayHello)
     "ProduceBurrito"   |> Binding.cmd (fun _ -> NewBurrito)
-    "CloseEvtList"      |> Binding.twoWay
+    "CloseEvtList"      |> Binding.oneWay
                             (fun s -> 
                                 countBurrito <- countBurrito + 1
                                 s.CloseEvtMap.Add(countBurrito, new List<Action>())
                                 s.CloseEvtMap.Item countBurrito)
-                            (fun list s -> SubscribeClose list)
     "SaveBurrito"      |> Binding.paramCmd (fun obj state -> 
                                     SubmitBurrito obj )
 ]
