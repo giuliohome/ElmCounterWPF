@@ -9,8 +9,9 @@ open System.ComponentModel
 open FsXaml
 open System
 open System.Collections.Generic
+open System.Windows
 
-type State = { Count: int; State: string; MyName: string; HelloMsg: string; CloseEvtList: List<Action> } 
+type State = { Count: int; State: string; MyName: string; HelloMsg: string; mutable CloseEvtMap: Dictionary<int, List<Action>> } 
 
 type GoOnMsg = {Msg: string; ToGo: int}
 type GoOnAdding = {Adder: int; ToGo: int}
@@ -30,13 +31,17 @@ type Msg =
     | ShowName
     | NewBurrito
     | SubscribeClose of List<Action>
-    | SubmitBurrito
+    | SubmitBurrito of Object
 
 let rnd = Random()
 
 let helloMsg name count = sprintf "Hello %s! Your counter is %d!" name count //state.MyName state.Count
 let initName = "Mister X"
-let init() = { Count = 0; State="Ready"; MyName= initName; HelloMsg = helloMsg initName 0; CloseEvtList = List<Action>()}, Cmd.none
+let mutable countBurrito = 0
+let init() = 
+    let startDict = new Dictionary<int,List<Action>>()
+    startDict.Add(countBurrito, new List<Action>())
+    { Count = 0; State="Ready"; MyName= initName; HelloMsg = helloMsg initName 0; CloseEvtMap = startDict}, Cmd.none
 
 let simulateException level = 
     if rnd.Next(level) = level-1 
@@ -82,8 +87,8 @@ let burritoWin () =
  
 
 
-let submitBurrito state = 
-    state.CloseEvtList.ForEach(fun a -> mainWindow.Dispatcher.Invoke(fun () ->  a.Invoke() ))
+let submitBurrito (list: List<Action>) = 
+    list.ForEach(fun a -> mainWindow.Dispatcher.Invoke(fun () ->  a.Invoke() ))
 
 let update msg state =  
     match msg with 
@@ -133,8 +138,12 @@ let update msg state =
     | NewBurrito ->    
         state, Cmd.attemptFunc  burritoWin () (fun ex -> ShowMsg ex.Message)  
     | SubscribeClose list -> 
-        {state with CloseEvtList=list}, Cmd.none
-    | SubmitBurrito -> state, Cmd.attemptFunc submitBurrito state (fun ex -> ShowMsg ex.Message)
+        state.CloseEvtMap.Add(countBurrito, list)
+        countBurrito <- countBurrito + 1
+        state, Cmd.none
+    | SubmitBurrito obj -> 
+        let list = obj :?> List<Action>
+        state, Cmd.attemptFunc submitBurrito list (fun ex -> ShowMsg ex.Message)
 
 let bindings model dispatch = [
     
@@ -148,9 +157,15 @@ let bindings model dispatch = [
     "NameMsg"          |> Binding.oneWay (fun state -> state.HelloMsg)
     "MyName"           |>  Binding.twoWay (fun state -> state.MyName) (fun name _ -> NameIs name)
     "SayHello"         |> Binding.cmd (fun _ -> SayHello)
-    "CloseEvtList"     |> Binding.twoWay (fun state -> state.CloseEvtList) (fun list state -> SubscribeClose list)
     "ProduceBurrito"   |> Binding.cmd (fun _ -> NewBurrito)
-    "SaveBurrito"      |> Binding.cmd (fun state -> SubmitBurrito)
+    "CloseEvtList"      |> Binding.twoWay
+                            (fun s -> 
+                                countBurrito <- countBurrito + 1
+                                s.CloseEvtMap.Add(countBurrito, new List<Action>())
+                                s.CloseEvtMap.Item countBurrito)
+                            (fun list s -> SubscribeClose list)
+    "SaveBurrito"      |> Binding.paramCmd (fun obj state -> 
+                                    SubmitBurrito obj )
 ]
 
 

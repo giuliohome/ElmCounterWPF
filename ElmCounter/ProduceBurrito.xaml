@@ -2,7 +2,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:mywin="clr-namespace:WinClosureLib;assembly=WinClosureLib"
-        mc:Ignorable="d" WinCloseEvent="{Binding CloseEvtList}"
+        mc:Ignorable="d" WinCloseEvent="{Binding CloseEvtList}" Name="WinC"
         Title="New Burrito" >
   <Grid>
     <StackPanel>
@@ -18,7 +18,8 @@
                 <TextBlock Text="Calories: " />
                 <TextBox Text="{Binding Cal}" />
             </DockPanel>
-            <Button Content="Submit" Command="{Binding SaveBurrito}" />
+            <Button Content="Submit" Command="{Binding SaveBurrito}" 
+                    CommandParameter="{Binding WinCloseEvent, RelativeSource= {RelativeSource AncestorType=mywin:ClosableWindow}}" />
     </StackPanel>
   </Grid>
 </mywin:ClosableWindow>
