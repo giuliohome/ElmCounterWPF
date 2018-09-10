@@ -11,7 +11,7 @@ open System
 open System.Collections.Generic
 open System.Windows
 
-type State = { Count: int; State: string; MyName: string; HelloMsg: string; mutable CloseEvtMap: Dictionary<int, List<Action>> } 
+type State = { Count: int; State: string; MyName: string; HelloMsg: string; } 
 
 type GoOnMsg = {Msg: string; ToGo: int}
 type GoOnAdding = {Adder: int; ToGo: int}
@@ -38,9 +38,7 @@ let helloMsg name count = sprintf "Hello %s! Your counter is %d!" name count
 let initName = "Mister X"
 let mutable countBurrito = 0
 let init() = 
-    let startDict = new Dictionary<int,List<Action>>()
-    startDict.Add(countBurrito, new List<Action>())
-    { Count = 0; State="Ready"; MyName= initName; HelloMsg = helloMsg initName 0; CloseEvtMap = startDict}, Cmd.none
+    { Count = 0; State="Ready"; MyName= initName; HelloMsg = helloMsg initName 0; }, Cmd.none
 
 let simulateException level = 
     if rnd.Next(level) = level-1 
@@ -154,11 +152,7 @@ let bindings model dispatch = [
     "MyName"           |>  Binding.twoWay (fun state -> state.MyName) (fun name _ -> NameIs name)
     "SayHello"         |> Binding.cmd (fun _ -> SayHello)
     "ProduceBurrito"   |> Binding.cmd (fun _ -> NewBurrito)
-    "CloseEvtList"      |> Binding.oneWay
-                            (fun s -> 
-                                countBurrito <- countBurrito + 1
-                                s.CloseEvtMap.Add(countBurrito, new List<Action>())
-                                s.CloseEvtMap.Item countBurrito)
+    "CloseEvtList"      |> Binding.oneWay (fun s -> new List<Action>())
     "SaveBurrito"      |> Binding.paramCmd (fun obj state -> 
                                     SubmitBurrito obj )
 ]
