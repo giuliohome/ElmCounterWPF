@@ -51,6 +51,7 @@
     <Content Include="packages.config" />
     <Resource Include="MainWindow.xaml" />
     <Resource Include="SecondWindow.xaml" />
+    <Resource Include="ProduceBurrito.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Elmish">
@@ -80,6 +81,9 @@
     </Reference>
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
+    <Reference Include="WinClosureLib">
+      <HintPath>..\..\..\..\..\vs\classic_desktop\AttachedProperties\ClosableWindow\WinClosureLib\bin\Debug\WinClosureLib.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

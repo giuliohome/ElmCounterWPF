@@ -1,0 +1,25 @@
+﻿<mywin:ClosableWindow xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:mywin="clr-namespace:WinClosureLib;assembly=WinClosureLib"
+        mc:Ignorable="d" WinCloseEvent="{Binding CloseEvtList}"
+        Title="New Burrito" >
+  <Grid>
+    <StackPanel>
+      <DockPanel>
+        <TextBlock Text="Burrito Name: " />
+        <TextBox Text="{Binding Name}" />
+            </DockPanel>
+            <DockPanel>
+                <TextBlock Text="Quantity: " />
+                <TextBox Text="{Binding Qty}" />
+            </DockPanel>
+            <DockPanel>
+                <TextBlock Text="Calories: " />
+                <TextBox Text="{Binding Cal}" />
+            </DockPanel>
+            <Button Content="Submit" Command="{Binding SaveBurrito}" />
+    </StackPanel>
+  </Grid>
+</mywin:ClosableWindow>
+
