@@ -82,7 +82,7 @@
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="WinClosureLib">
-      <HintPath>..\..\..\..\..\vs\classic_desktop\AttachedProperties\ClosableWindow\WinClosureLib\bin\Debug\WinClosureLib.dll</HintPath>
+      <HintPath>..\ClosableWin\WinClosureLib.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
