@@ -82,7 +82,7 @@ let burritoWin () =
             burritoWin.DataContext <- mainWindow.DataContext
             burritoWin.Show()) 
  
- test automatic build for Azure Pipeline ko
+automatic build for Azure Pipeline test ko
 
 let submitBurrito (list: List<Action>) = 
     list.ForEach(fun a -> mainWindow.Dispatcher.Invoke(fun () ->  a.Invoke() ))
