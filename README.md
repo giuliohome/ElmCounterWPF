@@ -1,4 +1,4 @@
-# Elm counter in WPF
+# Elm counter in WPF giuliohome/ElmCounterWP [![Build Status](https://giulio8.visualstudio.com/SharpF/_apis/build/status/SharpF-.NET%20Desktop-CI)](https://giulio8.visualstudio.com/SharpF/_build/latest?definitionId=4)
 
 
 This is a fork to show some more advanced features: opening new windows and passing a datacontext, etc..
